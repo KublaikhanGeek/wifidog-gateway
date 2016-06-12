@@ -174,6 +174,7 @@ arp_get(const char *req_ip)
     while (!feof(proc) && fgetc(proc) != '\n') ;
 
     /* Find ip, copy mac in reply */
+#if 0
     reply = NULL;
     while (!feof(proc) && (fscanf(proc, " %15[0-9.] %*s %*s %17[A-Fa-f0-9:] %*s %*s", ip, mac) == 2)) {
         if (strcmp(ip, req_ip) == 0) {
@@ -181,7 +182,36 @@ arp_get(const char *req_ip)
             break;
         }
     }
+#else
+    char lineBuf[1024] = {0};
+    char* delim = " ";
+    while(fgets(lineBuf, 1024, proc) != NULL)
+    {
+        char* tmp = strtok(lineBuf, delim);
 
+        if (strncmp(tmp, req_ip, strlen(req_ip)) != 0)
+           continue;
+
+        int ncount = 1;
+        while(tmp != NULL)
+        {
+           //printf("test is %s\n", tmp);
+           if (4 == ncount)
+           {
+            //  printf("find mac is %s\n", tmp);
+              reply = safe_strdup(tmp);
+              break;
+           }
+
+           tmp = strtok(NULL, delim);
+           ++ncount;
+        }
+
+        if (4 == ncount)
+            break;
+
+    }
+#endif
     fclose(proc);
 
     return reply;
